@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Waterborne Disease Early Warning System | Kerala</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0a0e1a">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Lottie Player -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1a1f35;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #10b981;
+            --accent-purple: #a855f7;
+            --gradient-primary: linear-gradient(135deg, #22d3ee 0%, #10b981 100%);
+            --gradient-hero: linear-gradient(135deg, #0ea5e9 0%, #22d3ee 50%, #10b981 100%);
+            --low-color: #10b981;
+            --low-glow: 0 0 40px rgba(16, 185, 129, 0.4);
+            --medium-color: #f59e0b;
+            --medium-glow: 0 0 40px rgba(245, 158, 11, 0.4);
+            --high-color: #ef4444;
+            --high-glow: 0 0 40px rgba(239, 68, 68, 0.5);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f0f4f8;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e2e8f0;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --text-primary: #0f172a;
+            --text-secondary: rgba(15, 23, 42, 0.7);
+            --text-muted: rgba(15, 23, 42, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body.loading {
+            pointer-events: none;
+        }
+
+        body.loading::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 9998;
+        }
+
+        body.loading::before {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            margin: -30px 0 0 -30px;
+            border: 4px solid var(--glass-border);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            z-index: 9999;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Kerala Map Background */
+        .kerala-map-bg {
+            position: fixed;
+            top: 50%;
+            right: -10%;
+            transform: translateY(-50%);
+            width: 600px;
+            height: 900px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .kerala-map-bg svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .blob-1 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(16, 185, 129, 0.2));
+            top: -200px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(34, 211, 238, 0.2));
+            bottom: -150px;
+            right: -100px;
+            animation-delay: -7s;
+        }
+
+        .blob-3 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(34, 211, 238, 0.15));
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            25% {
+                transform: translate(50px, -50px) scale(1.1);
+            }
+
+            50% {
+                transform: translate(-30px, 30px) scale(0.95);
+            }
+
+            75% {
+                transform: translate(40px, 40px) scale(1.05);
+            }
+        }
+
+        /* Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 2rem;
+        }
+
+        .navbar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-logo {
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+        }
+
+        .navbar-title {
+            font-family: 'Sora', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .navbar-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .kerala-badge {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(34, 211, 238, 0.2));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+            }
+
+            50% {
+                opacity: 0.7;
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+        }
+
+        .theme-toggle {
+            width: 44px;
+            height: 44px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent-cyan);
+            transform: scale(1.05);
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            padding: 4rem 2rem;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .hero-title {
+            font-family: 'Sora', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            animation: fadeInUp 0.6s ease-out 0.1s both;
+        }
+
+        .hero-title-gradient {
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: var(--transition);
+            box-shadow: 0 4px 20px rgba(34, 211, 238, 0.3);
+            animation: fadeInUp 0.6s ease-out 0.3s both;
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(34, 211, 238, 0.4);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* District Heat Strip */
+        .district-strip {
+            padding: 1.5rem 2rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .district-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+        .district-strip-inner {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .district-chip {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .district-chip::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: var(--transition);
+        }
+
+        .district-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .district-chip:hover::before {
+            transform: scaleX(1);
+        }
+
+        .district-chip.active {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .district-chip.active::before {
+            transform: scaleX(1);
+        }
+
+        /* Main Dashboard */
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--glass-shadow);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.25rem;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+        }
+
+        .form-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 0.75rem;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        body.loading .btn-spinner {
+            display: block;
+        }
+
+        body.loading .btn-text {
+            display: none;
+        }
+
+        /* Risk Result Styles */
+        .risk-result {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .risk-banner {
+            padding: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .risk-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            filter: blur(40px);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        .risk-low {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(34, 211, 238, 0.1));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: var(--low-glow);
+        }
+
+        .risk-medium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.1));
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            box-shadow: var(--medium-glow);
+            animation: pulseMedium 2s ease-in-out infinite;
+        }
+
+        .risk-high {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.15));
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            box-shadow: var(--high-glow);
+            animation: shakeHigh 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseMedium {
+
+            0%,
+            100% {
+                box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 50px rgba(245, 158, 11, 0.5);
+            }
+        }
+
+        @keyframes shakeHigh {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-2px);
+            }
+
+            75% {
+                transform: translateX(2px);
+            }
+        }
+
+        .risk-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .risk-low .risk-icon {
+            color: var(--low-color);
+        }
+
+        .risk-medium .risk-icon {
+            color: var(--medium-color);
+        }
+
+        .risk-high .risk-icon {
+            color: var(--high-color);
+        }
+
+        .risk-level {
+            font-family: 'Sora', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .risk-low .risk-level {
+            color: var(--low-color);
+        }
+
+        .risk-medium .risk-level {
+            color: var(--medium-color);
+        }
+
+        .risk-high .risk-level {
+            color: var(--high-color);
+        }
+
+        .risk-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Confidence Meter */
+        .confidence-meter {
+            margin: 1.5rem 0;
+        }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .confidence-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-out;
+        }
+
+        .risk-low .confidence-fill {
+            width: 30%;
+            background: linear-gradient(90deg, var(--low-color), var(--accent-cyan));
+        }
+
+        .risk-medium .confidence-fill {
+            width: 60%;
+            background: linear-gradient(90deg, var(--medium-color), #fbbf24);
+        }
+
+        .risk-high .confidence-fill {
+            width: 85%;
+            background: linear-gradient(90deg, var(--high-color), #f87171);
+        }
+
+        /* Recommendations */
+        .recommendations {
+            text-align: left;
+        }
+
+        .recommendations-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .recommendation-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .recommendation-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .risk-low .recommendation-chip {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--low-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .risk-medium .recommendation-chip {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--medium-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .risk-high .recommendation-chip {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--high-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Weather Card */
+        .weather-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .weather-stat {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .weather-stat:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--accent-cyan);
+        }
+
+        .weather-stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-cyan);
+        }
+
+        .weather-stat-value {
+            font-family: 'Sora', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .weather-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .weather-stat.temp .weather-stat-value {
+            font-size: 2.5rem;
+        }
+
+        .flood-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .flood-chip.no-flood {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--low-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .flood-chip.flood {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--high-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .weather-source {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--glass-border);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Weather Visual */
+        .weather-visual {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            min-height: 250px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .weather-visual-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .weather-visual-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(10, 14, 26, 0.8) 100%);
+        }
+
+        .weather-visual-content {
+            position: relative;
+            z-index: 1;
+            padding: 1.5rem;
+            width: 100%;
+        }
+
+        .weather-condition {
+            font-family: 'Sora', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .weather-condition-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Lottie Weather Animation */
+        .lottie-weather {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0.75rem 1rem;
+            }
+
+            .navbar-title {
+                font-size: 0.95rem;
+            }
+
+            .navbar-subtitle {
+                display: none;
+            }
+
+            .hero {
+                padding: 2.5rem 1rem;
+            }
+
+            .hero-title {
+                font-size: 1.75rem;
+            }
+
+            .hero-subtitle {
+                font-size: 0.95rem;
+            }
+
+            .glass-card {
+                padding: 1.25rem;
+            }
+
+            .weather-display {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .weather-stat-value {
+                font-size: 1.5rem;
+            }
+
+            .weather-stat.temp .weather-stat-value {
+                font-size: 2rem;
+            }
+
+            .kerala-badge {
+                display: none;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Focus Styles */
+        *:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Kerala Map Background Silhouette -->
+    <div class="kerala-map-bg">
+        <svg viewBox="0 0 200 500" fill="currentColor" opacity="0.8">
+            <path
+                d="M120,10 C130,15 140,20 145,35 C150,50 148,70 155,90 C162,110 170,125 175,145 C180,165 178,185 180,205 C182,225 188,245 185,265 C182,285 175,300 170,320 C165,340 162,360 155,380 C148,400 140,415 130,430 C120,445 108,455 95,465 C82,475 68,480 55,478 C42,476 30,468 22,455 C14,442 10,425 12,405 C14,385 22,365 25,345 C28,325 26,305 30,285 C34,265 42,248 48,230 C54,212 58,195 65,178 C72,161 82,148 88,132 C94,116 96,100 102,85 C108,70 118,58 120,45 C122,32 116,22 120,10 Z" />
+        </svg>
+    </div>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">
+                <div class="navbar-logo">
+                    <i class="fas fa-shield-virus"></i>
+                </div>
+                <div>
+                    <div class="navbar-title">AI Waterborne Disease Early Warning System</div>
+                    <div class="navbar-subtitle">Predictive Health Intelligence</div>
+                </div>
+            </div>
+            <div class="navbar-actions">
+                <a href="/admin" class="kerala-badge" style="text-decoration: none; cursor: pointer;">
+                    <i class="fas fa-user-shield"></i>
+                    Admin
+                </a>
+                <div class="kerala-badge">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Kerala
+                </div>
+                <div class="live-indicator">
+                    <span class="live-dot"></span>
+                    Live
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-microchip"></i>
+                Powered by Machine Learning
+            </div>
+            <h1 class="hero-title">
+                <span class="hero-title-gradient">Protecting Kerala</span><br>
+                from Waterborne Diseases
+            </h1>
+            <p class="hero-subtitle">
+                Real-time weather signals combined with advanced ML outbreak risk forecasting.
+                Stay ahead of health threats with predictive intelligence.
+            </p>
+            <a href="#analyze" class="hero-cta">
+                <i class="fas fa-search-location"></i>
+                Analyze District Risk
+            </a>
+        </div>
+    </section>
+    <!-- District Quick Chips (Heat Strip) -->
+    <div class="district-strip">
+        <div class="district-strip-inner">
+            {% for district in districts %}
+            <button class="district-chip {% if district == selected_district %}active{% endif %}"
+                onclick="selectDistrict('{{ district }}')" type="button">
+                {{ district }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- Main Dashboard -->
+    <main class="dashboard" id="analyze">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Select District Card -->
+            <div class="glass-card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </div>
+                        Select District
+                    </div>
+                </div>
+                <form method="POST" id="district-form">
+                    <div class="form-group">
+                        <label class="form-label" for="district">Search Location</label>
+                        <div style="position: relative;">
+                            <input type="text" name="district" id="district" class="form-select"
+                                placeholder="Enter city or district (e.g., Kochi, London...)"
+                                value="{{ selected_district if selected_district else '' }}" autocomplete="off" required
+                                style="cursor: text; padding-left: 2.5rem;">
+                            <i class="fas fa-search"
+                                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+
+                            <!-- Autocomplete Dropdown -->
+                            <ul id="suggestions-list" style="
+                                position: absolute;
+                                top: 100%;
+                                left: 0;
+                                right: 0;
+                                background: rgba(10, 14, 26, 0.95);
+                                border: 1px solid var(--glass-border);
+                                border-radius: 8px;
+                                list-style: none;
+                                padding: 0;
+                                margin-top: 5px;
+                                max-height: 200px;
+                                overflow-y: auto;
+                                z-index: 1000;
+                                display: none;
+                                backdrop-filter: blur(10px);
+                            "></ul>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="submit-btn">
+                        <span class="btn-spinner"></span>
+                        <span class="btn-text">
+                            <i class="fas fa-analytics"></i>
+                            Analyze Risk
+                        </span>
+                    </button>
+                </form>
+
+                <script>
+                    const input = document.getElementById('district');
+                    const list = document.getElementById('suggestions-list');
+                    let timeout = null;
+
+                    input.addEventListener('input', function () {
+                        const query = this.value;
+                        if (query.length < 3) {
+                            list.style.display = 'none';
+                            return;
+                        }
+
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => {
+                            fetch(`/api/search_cities?q=${query}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    list.innerHTML = '';
+                                    if (data.results.length > 0) {
+                                        list.style.display = 'block';
+                                        data.results.forEach(city => {
+                                            const item = document.createElement('li');
+                                            item.style.padding = '10px 15px';
+                                            item.style.cursor = 'pointer';
+                                            item.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                                            item.style.color = '#fff';
+                                            item.style.transition = 'background 0.2s';
+
+                                            // Format: London, GB or London, Ohio, US
+                                            const state = city.state ? `${city.state}, ` : '';
+                                            const location = `${city.name}, ${state}${city.country}`;
+                                            item.innerText = location;
+
+                                            item.addEventListener('mouseenter', () => item.style.background = 'rgba(34, 211, 238, 0.1)');
+                                            item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+
+                                            item.addEventListener('click', () => {
+                                                input.value = city.name;
+                                                list.style.display = 'none';
+                                            });
+                                            list.appendChild(item);
+                                        });
+                                    } else {
+                                        list.style.display = 'none';
+                                    }
+                                });
+                        }, 300);
+                    });
+
+                    // Hide list when clicking outside
+                    document.addEventListener('click', (e) => {
+                        if (e.target !== input && e.target !== list) {
+                            list.style.display = 'none';
+                        }
+                    });
+                </script>
+            </div>
+            <!-- AI Risk Result Card -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        AI Risk Analysis
+                    </div>
+                </div>
+                {% if message %}
+                {% if "LOW" in message %}
+                <div class="risk-result risk-low">
+                    <div class="risk-banner risk-low">
+                        <div class="risk-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="risk-level">LOW RISK</div>
+                        <p class="risk-message">{{ message }}</p>
+                    </div>
+                    <div class="confidence-meter">
+                        <div class="confidence-label">
+                            <span>Risk Confidence</span>
+                            <span>30%</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill"></div>
+                        </div>
+                    </div>
+                    <div class="recommendations">
+                        <div class="recommendations-title">
+                            <i class="fas fa-clipboard-list"></i> Recommendations
+                        </div>
+                        <div class="recommendation-chips">
+                            <span class="recommendation-chip"><i class="fas fa-eye"></i> Continue monitoring</span>
+                            <span class="recommendation-chip"><i class="fas fa-hand-sparkles"></i> Maintain
+                                hygiene</span>
+                            <span class="recommendation-chip"><i class="fas fa-tint"></i> Safe water practices</span>
+                        </div>
+                    </div>
+                </div>
+                {% elif "MEDIUM" in message %}
+                <div class="risk-result risk-medium">
+                    <div class="risk-banner risk-medium">
+                        <div class="risk-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="risk-level">MEDIUM RISK</div>
+                        <p class="risk-message">{{ message }}</p>
+                    </div>
+                    <div class="confidence-meter">
+                        <div class="confidence-label">
+                            <span>Risk Confidence</span>
+                            <span>60%</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill"></div>
+                        </div>
+                    </div>
+                    <div class="recommendations">
+                        <div class="recommendations-title">
+                            <i class="fas fa-clipboard-list"></i> Recommendations
+                        </div>
+                        <div class="recommendation-chips">
+                            <span class="recommendation-chip"><i class="fas fa-fire"></i> Boil drinking water</span>
+                            <span class="recommendation-chip"><i class="fas fa-flask"></i> Use chlorination</span>
+                            <span class="recommendation-chip"><i class="fas fa-notes-medical"></i> Report
+                                symptoms</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="risk-result risk-high">
+                    <div class="risk-banner risk-high">
+                        <div class="risk-icon">
+                            <i class="fas fa-radiation-alt"></i>
+                        </div>
+                        <div class="risk-level">HIGH RISK</div>
+                        <p class="risk-message">{{ message }}</p>
+                    </div>
+                    <div class="confidence-meter">
+                        <div class="confidence-label">
+                            <span>Risk Confidence</span>
+                            <span>85%</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill"></div>
+                        </div>
+                    </div>
+                    <div class="recommendations">
+                        <div class="recommendations-title">
+                            <i class="fas fa-clipboard-list"></i> Urgent Recommendations
+                        </div>
+                        <div class="recommendation-chips">
+                            <span class="recommendation-chip"><i class="fas fa-ban"></i> Avoid untreated water</span>
+                            <span class="recommendation-chip"><i class="fas fa-fire-alt"></i> Boil 5 minutes</span>
+                            <span class="recommendation-chip"><i class="fas fa-hospital"></i> Medical support
+                                alert</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <p class="empty-text">Select a district to view AI-powered risk analysis</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Right Column -->
+        <div class="right-column">
+            <!-- Live Weather Card -->
+            <div class="glass-card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-cloud-sun"></i>
+                        </div>
+                        Live Weather
+                    </div>
+                    {% if weather %}
+                    <div class="live-indicator">
+                        <span class="live-dot"></span>
+                        Now
+                    </div>
+                    {% endif %}
+                </div>
+                {% if weather %}
+                <div class="weather-display">
+                    <div class="weather-stat temp">
+                        <div class="weather-stat-icon"><i class="fas fa-thermometer-half"></i></div>
+                        <div class="weather-stat-value">{{ weather.temperature }}°C</div>
+                        <div class="weather-stat-label">Temperature</div>
+                    </div>
+                    <div class="weather-stat">
+                        <div class="weather-stat-icon"><i class="fas fa-cloud-rain"></i></div>
+                        <div class="weather-stat-value">{{ weather.rainfall }}<small>mm</small></div>
+                        <div class="weather-stat-label">Rain (last 1h)</div>
+                    </div>
+                    <div class="weather-stat">
+                        <div class="weather-stat-icon"><i class="fas fa-tint"></i></div>
+                        <div class="weather-stat-value">{{ weather.humidity }}%</div>
+                        <div class="weather-stat-label">Humidity</div>
+                    </div>
+                    <div class="weather-stat">
+                        <div class="weather-stat-icon"><i class="fas fa-water"></i></div>
+                        <div>
+                            {% if weather.flood == 1 %}
+                            <span class="flood-chip flood">
+                                <i class="fas fa-exclamation-circle"></i> Yes
+                            </span>
+                            {% else %}
+                            <span class="flood-chip no-flood">
+                                <i class="fas fa-check-circle"></i> No
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="weather-stat-label">Flood Risk</div>
+                    </div>
+                </div>
+                <div class="weather-source">
+                    <i class="fas fa-database"></i>
+                    Data Source: OpenWeatherMap (Current)
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <p class="empty-text">Select a district to fetch live weather data</p>
+                </div>
+                {% endif %}
+            </div>
+            <!-- Weather Visual Card -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        Weather Conditions
+                    </div>
+                </div>
+                {% if weather %}
+                <div class="weather-visual">
+                    {% if weather.rainfall > 0 %}
+                    <div class="weather-visual-bg"
+                        style="background-image: url('https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=800&q=80');">
+                    </div>
+                    <lottie-player class="lottie-weather"
+                        src="https://assets3.lottiefiles.com/packages/lf20_rpC1Rd.json" background="transparent"
+                        speed="1" loop autoplay>
+                    </lottie-player>
+                    {% elif weather.temperature >= 32 %}
+                    <div class="weather-visual-bg"
+                        style="background-image: url('https://images.unsplash.com/photo-1504386106331-3e4e71712b38?w=800&q=80');">
+                    </div>
+                    <lottie-player class="lottie-weather"
+                        src="https://assets9.lottiefiles.com/packages/lf20_xlky4kvh.json" background="transparent"
+                        speed="1" loop autoplay>
+                    </lottie-player>
+                    {% else %}
+                    <div class="weather-visual-bg"
+                        style="background-image: url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80');">
+                    </div>
+                    <lottie-player class="lottie-weather"
+                        src="https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json" background="transparent"
+                        speed="1" loop autoplay>
+                    </lottie-player>
+                    {% endif %}
+                    <div class="weather-visual-overlay"></div>
+                    <div class="weather-visual-content">
+                        {% if weather.rainfall > 0 %}
+                        <div class="weather-condition"><i class="fas fa-cloud-showers-heavy"></i> Rainy</div>
+                        <div class="weather-condition-desc">Rainfall detected - increased waterborne disease risk</div>
+                        {% elif weather.temperature >= 32 %}
+                        <div class="weather-condition"><i class="fas fa-sun"></i> Hot & Sunny</div>
+                        <div class="weather-condition-desc">High temperatures - stay hydrated with safe water</div>
+                        {% else %}
+                        <div class="weather-condition"><i class="fas fa-cloud"></i> Cloudy</div>
+                        <div class="weather-condition-desc">Normal conditions - maintain standard precautions</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="weather-visual"
+                    style="min-height: 200px; background: var(--glass-bg); display: flex; align-items: center; justify-content: center;">
+                    <div class="empty-state" style="padding: 2rem;">
+                        <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_uwR49r.json"
+                            background="transparent" speed="1" style="width: 120px; height: 120px; margin: 0 auto;" loop
+                            autoplay>
+                        </lottie-player>
+                        <p class="empty-text" style="margin-top: 1rem;">Weather visualization will appear here</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <!-- Smart Map & Analytics Section -->
+    <section class="dashboard-extended" style="max-width: 1400px; margin: 0 auto; padding: 0 2rem 4rem;">
+
+        <!-- Smart Map -->
+        <div class="glass-card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">
+                        <i class="fas fa-satellite-dish"></i>
+                    </div>
+                    Live Risk Surveillance Map
+                </div>
+                <div class="live-indicator">
+                    <span class="live-dot"></span>
+                    Real-time Updates
+                </div>
+            </div>
+            <div id="risk-map" style="height: 500px; width: 100%; border-radius: var(--radius); z-index: 1;"></div>
+        </div>
+
+
+
+
+        {% if weather %}
+        <div class="weather-dashboard-row"
+            style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 25px; align-items: stretch;">
+
+            <!-- Left Column: Animation (Visual) -->
+            <div class="glass-card" style="flex: 3; min-width: 300px; margin: 0;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-child"></i>
+                        </div>
+                        Live Weather Impact
+                    </div>
+                </div>
+
+                <!-- Dynamic Background Container -->
+                <div style="
+                    display: flex; 
+                    justify-content: center; 
+                    align-items: center; 
+                    min-height: 300px; /* Reduced height slightly for better aspect ratio */
+                    height: 100%;
+                    border-radius: var(--radius); 
+                    position: relative; 
+                    overflow: hidden;
+                    transition: background 0.5s ease;
+                    {% if weather.rainfall > 0 %}
+                        background: linear-gradient(180deg, #374151 0%, #111827 100%);
+                    {% elif weather.temperature < 22 %}
+                        background: linear-gradient(180deg, #bfdbfe 0%, #60a5fa 100%);
+                    {% elif weather.temperature >= 32 %}
+                        background: linear-gradient(180deg, #fde68a 0%, #fbbf24 100%);
+                    {% else %}
+                        background: linear-gradient(180deg, #e5e7eb 0%, #9ca3af 100%);
+                    {% endif %}
+                ">
+                    <!-- Decorative background elements -->
+                    <div
+                        style="position: absolute; width: 100%; height: 100%; opacity: 0.2; background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0) 70%);">
+                    </div>
+
+                    {% if weather.rainfall > 0 %}
+                    <!-- Rainy -->
+                    <lottie-player src="https://assets4.lottiefiles.com/packages/lf20_6sxyjyjj.json"
+                        background="transparent" speed="1" style="width: 280px; height: 280px;" loop
+                        autoplay></lottie-player>
+                    <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
+                        <span class="recommendation-chip" style="background: rgba(16,185,129,0.9); color: #fff;">Carry
+                            an umbrella!</span>
+                    </div>
+
+                    {% elif weather.temperature < 22 %} <!-- Winter -->
+                        <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json"
+                            background="transparent" speed="1" style="width: 280px; height: 280px;" loop
+                            autoplay></lottie-player>
+                        <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
+                            <span class="recommendation-chip"
+                                style="background: rgba(59, 130, 246, 0.9); color: #fff;">Brrr! Wear a jacket.</span>
+                        </div>
+
+                        {% elif weather.temperature >= 32 %}
+                        <!-- Sunny -->
+                        <lottie-player src="https://assets9.lottiefiles.com/packages/lf20_xlky4kvh.json"
+                            background="transparent" speed="1" style="width: 280px; height: 280px;" loop
+                            autoplay></lottie-player>
+                        <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
+                            <span class="recommendation-chip"
+                                style="background: rgba(245,158,11,0.9); color: #fff;">Stay cool & hydrated!</span>
+                        </div>
+                        {% else %}
+                        <!-- Cloud/Normal -->
+                        <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json"
+                            background="transparent" speed="1" style="width: 280px; height: 280px;" loop
+                            autoplay></lottie-player>
+                        <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
+                            <span class="recommendation-chip"
+                                style="background: rgba(34,211,238,0.9); color: #fff;">Pleasant weather today</span>
+                        </div>
+                        {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column: Weather Details Grid -->
+            <div class="weather-grid" style="
+                flex: 2;
+                min-width: 300px;
+                display: grid; 
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+                gap: 15px; 
+                align-content: start;
+            ">
+                <!-- Wind -->
+                <div class="detail-card glass-card"
+                    style="padding: 15px; text-align: center; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1rem; color: #9ca3af; margin-bottom: 5px;"><i class="fas fa-wind"></i> Wind
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: 600;">
+                        {{ weather.wind_speed }} <span style="font-size: 0.8rem">m/s</span>
+                        <div
+                            style="font-size: 0.9rem; opacity: 0.7; transform: rotate({{ weather.wind_deg }}deg); display: inline-block; margin-left: 5px;">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Humidity -->
+                <div class="detail-card glass-card"
+                    style="padding: 15px; text-align: center; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1rem; color: #60a5fa; margin-bottom: 5px;"><i class="fas fa-tint"></i>
+                        Humidity</div>
+                    <div style="font-size: 1.2rem; font-weight: 600;">{{ weather.humidity }}%</div>
+                </div>
+
+                <!-- Visibility -->
+                <div class="detail-card glass-card"
+                    style="padding: 15px; text-align: center; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1rem; color: #10b981; margin-bottom: 5px;"><i class="fas fa-eye"></i>
+                        Visibility</div>
+                    <div style="font-size: 1.2rem; font-weight: 600;">{{ weather.visibility }} km</div>
+                </div>
+
+                <!-- Pressure -->
+                <div class="detail-card glass-card"
+                    style="padding: 15px; text-align: center; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1rem; color: #fbbf24; margin-bottom: 5px;"><i
+                            class="fas fa-compress-arrows-alt"></i> Pressure</div>
+                    <div style="font-size: 1.2rem; font-weight: 600;">{{ weather.pressure }} <span
+                            style="font-size: 0.8rem">hPa</span></div>
+                </div>
+
+                <!-- UV Index -->
+                <div class="detail-card glass-card"
+                    style="padding: 15px; text-align: center; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1rem; color: #f472b6; margin-bottom: 5px;"><i class="fas fa-sun"></i> UV
+                        Index</div>
+                    <div style="font-size: 1.2rem; font-weight: 600;">
+                        {% if weather.temperature > 30 %} High
+                        {% elif weather.temperature > 25 %} Moderate
+                        {% else %} Low {% endif %}
+                    </div>
+                </div>
+
+                <!-- Dew Point -->
+                <div class="detail-card glass-card"
+                    style="padding: 15px; text-align: center; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1rem; color: #a78bfa; margin-bottom: 5px;"><i
+                            class="fas fa-temperature-low"></i> Dew Point</div>
+                    <div style="font-size: 1.2rem; font-weight: 600;">{{ weather.dew_point }}°C</div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Empty State (When no weather data) -->
+        <div class="glass-card">
+            <div class="card-header">
+                <div class="card-title">Live Weather Impact</div>
+            </div>
+            <div
+                style="display: flex; justify-content: center; align-items: center; min-height: 300px; background: rgba(0,0,0,0.2); border-radius: var(--radius);">
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-cloud-sun-rain"></i></div>
+                    <p class="empty-text">Select a district to view the weather impact animation</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </section>
+    <!-- Footer -->
+    <footer class="footer">
+        <p>
+            <i class="fas fa-shield-virus"></i>
+            AI Waterborne Disease Early Warning System | Kerala Health Department
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.75rem;">
+            Powered by Machine Learning & Real-time Weather Analytics
+        </p>
+    </footer>
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+
+            if (body.dataset.theme === 'light') {
+                body.removeAttribute('data-theme');
+                icon.className = 'fas fa-moon';
+            } else {
+                body.dataset.theme = 'light';
+                icon.className = 'fas fa-sun';
+            }
+        }
+        // District Quick Select
+        function selectDistrict(district) {
+            const input = document.getElementById('district');
+            input.value = district;
+
+            // Update active chip
+            document.querySelectorAll('.district-chip').forEach(chip => {
+                chip.classList.remove('active');
+                if (chip.textContent.trim() === district) {
+                    chip.classList.add('active');
+                }
+            });
+
+            // Auto submit
+            document.getElementById('district-form').submit();
+            document.body.classList.add('loading');
+        }
+        // Form Submit Loading
+        document.getElementById('district-form').addEventListener('submit', function (e) {
+            const district = document.getElementById('district').value;
+            if (!district) {
+                e.preventDefault();
+                return;
+            }
+            document.body.classList.add('loading');
+            document.getElementById('submit-btn').disabled = true;
+        });
+        // Smooth scroll for CTA
+        document.querySelector('.hero-cta').addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('analyze').scrollIntoView({ behavior: 'smooth' });
+        });
+        // Animate confidence meter on load
+        document.addEventListener('DOMContentLoaded', function () {
+            const fills = document.querySelectorAll('.confidence-fill');
+            fills.forEach(fill => {
+                fill.style.width = '0';
+                setTimeout(() => {
+                    fill.style.width = '';
+                }, 100);
+            });
+        });
+        window.addEventListener("load", () => {
+            document.body.classList.remove("loading");
+            initMap();
+            initCharts();
+        });
+
+        // Initialize Map
+        function initMap() {
+            // India Coordinates (Zoomed out)
+            const map = L.map('risk-map').setView([20.5937, 78.9629], 5);
+
+            // Dark Mode Tiles
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Map Click Event - Interactive Weather
+            map.on('click', function (e) {
+                const lat = e.latlng.lat;
+                const lon = e.latlng.lng;
+
+                // Show loading popup
+                const popup = L.popup()
+                    .setLatLng(e.latlng)
+                    .setContent('<div style="color: #000;">Loading data...</div>')
+                    .openOn(map);
+
+                fetch(`/api/weather_coords?lat=${lat}&lon=${lon}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) {
+                            popup.setContent('<div style="color: #000;">Data unable</div>');
+                        } else {
+                            let riskColor = '#10b981';
+                            let riskText = 'Low Risk';
+                            if (data.risk === 1) { riskColor = '#f59e0b'; riskText = 'Medium Risk'; }
+                            if (data.risk === 2) { riskColor = '#ef4444'; riskText = 'High Risk'; }
+
+                            const content = `
+                                <div style="min-width: 200px; text-align: center;">
+                                    <h3 style="margin: 0 0 5px; color: #333; font-weight: bold;">${data.name}</h3>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px; color: #555;">
+                                        <span>Temp: <b>${data.temp}°C</b></span>
+                                        <span>Rain: <b>${data.rainfall}mm</b></span>
+                                    </div>
+                                    <div style="background: ${riskColor}; color: white; padding: 5px; border-radius: 4px; font-weight: bold;">
+                                        ${riskText}
+                                    </div>
+                                </div>
+                            `;
+                            popup.setContent(content);
+                        }
+                    })
+                    .catch(() => {
+                        popup.setContent('<div style="color: #000;">Error fetching data</div>');
+                    });
+            });
+
+            // Fetch Risk Data (Existing logic for districts)
+            fetch('/api/risk_map')
+                .then(response => response.json())
+                .then(data => {
+                    // Define district coordinates (approximate centers)
+                    const districtCoords = {
+                        "Alappuzha": [9.4981, 76.3388],
+                        "Ernakulam": [9.9816, 76.2999],
+                        "Idukki": [9.8500, 76.9667],
+                        "Kannur": [11.8745, 75.3704],
+                        "Kasaragod": [12.4996, 74.9869],
+                        "Kollam": [8.8932, 76.6141],
+                        "Kottayam": [9.5916, 76.5222],
+                        "Kozhikode": [11.2588, 75.7804],
+                        "Malappuram": [11.0510, 76.0711],
+                        "Palakkad": [10.7867, 76.6548],
+                        "Pathanamthitta": [9.2648, 76.7870],
+                        "Thiruvananthapuram": [8.5241, 76.9366],
+                        "Thrissur": [10.5276, 76.2144],
+                        "Wayanad": [11.6854, 76.1320]
+                    };
+
+                    for (const [district, risk] of Object.entries(data)) {
+                        const coords = districtCoords[district];
+                        if (coords) {
+                            let color = '#10b981'; // Low
+                            let radius = 15000;
+                            if (risk === 1) { color = '#f59e0b'; radius = 20000; } // Medium
+                            if (risk === 2) { color = '#ef4444'; radius = 25000; } // High
+
+                            L.circle(coords, {
+                                color: color,
+                                fillColor: color,
+                                fillOpacity: 0.5,
+                                radius: radius
+                            }).addTo(map)
+                                .bindPopup(`<b>${district}</b><br>Risk Level: ${risk === 0 ? 'Low' : risk === 1 ? 'Medium' : 'High'}`);
+                        }
+                    }
+                });
+        }
+
+        // Initialize Charts
+        function initCharts() {
+            fetch('/api/history')
+                .then(response => response.json())
+                .then(data => {
+                    // Rainfall Chart
+                    const ctxRain = document.getElementById('rainfall-chart');
+                    if (ctxRain) {
+                        new Chart(ctxRain, {
+                            type: 'line',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    label: 'Rainfall (mm)',
+                                    data: data.rainfall,
+                                    borderColor: '#22d3ee',
+                                    backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { labels: { color: '#fff' } }
+                                },
+                                scales: {
+                                    y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#ccc' } },
+                                    x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#ccc' } }
+                                }
+                            }
+                        });
+                    }
+
+                    // Risk Trend Chart
+                    const ctxRisk = document.getElementById('risk-trend-chart');
+                    if (ctxRisk) {
+                        new Chart(ctxRisk, {
+                            type: 'bar',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    label: 'Avg Risk Score',
+                                    data: data.risk,
+                                    backgroundColor: data.risk.map(v => v > 60 ? '#ef4444' : v > 30 ? '#f59e0b' : '#10b981'),
+                                    borderRadius: 5
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { labels: { color: '#fff' } }
+                                },
+                                scales: {
+                                    y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#ccc' } },
+                                    x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#ccc' } }
+                                }
+                            }
+                        });
+                    }
+                });
+        }
+
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js');
+            });
+        }
+    </script>
+</body>
+
+</html>
