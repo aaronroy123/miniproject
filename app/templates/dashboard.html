@@ -1570,10 +1570,10 @@
 
         {% if weather %}
         <div class="weather-dashboard-row"
-            style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 25px; align-items: stretch;">
+            style="display: flex; gap: 40px; flex-wrap: wrap; margin-top: 35px; margin-bottom: 25px; align-items: stretch;">
 
             <!-- Left Column: Animation (Visual) -->
-            <div class="glass-card" style="flex: 3; min-width: 300px; margin: 0;">
+            <div class="glass-card" style="flex: 3; min-width: 320px; margin: 0;">
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-icon">
@@ -1611,18 +1611,16 @@
 
                     {% if weather.rainfall > 0 %}
                     <!-- Rainy -->
-                    <lottie-player src="https://assets4.lottiefiles.com/packages/lf20_6sxyjyjj.json"
-                        background="transparent" speed="1" style="width: 280px; height: 280px;" loop
-                        autoplay></lottie-player>
+                    <img src="{{ url_for('static', filename='weather/rainy.svg') }}"
+                        style="width: 280px; height: 280px; object-fit: contain;" alt="Rainy">
                     <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
                         <span class="recommendation-chip" style="background: rgba(16,185,129,0.9); color: #fff;">Carry
                             an umbrella!</span>
                     </div>
 
                     {% elif weather.temperature < 22 %} <!-- Winter -->
-                        <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json"
-                            background="transparent" speed="1" style="width: 280px; height: 280px;" loop
-                            autoplay></lottie-player>
+                        <img src="{{ url_for('static', filename='weather/winter.svg') }}"
+                            style="width: 280px; height: 280px; object-fit: contain;" alt="Winter">
                         <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
                             <span class="recommendation-chip"
                                 style="background: rgba(59, 130, 246, 0.9); color: #fff;">Brrr! Wear a jacket.</span>
@@ -1630,18 +1628,16 @@
 
                         {% elif weather.temperature >= 32 %}
                         <!-- Sunny -->
-                        <lottie-player src="https://assets9.lottiefiles.com/packages/lf20_xlky4kvh.json"
-                            background="transparent" speed="1" style="width: 280px; height: 280px;" loop
-                            autoplay></lottie-player>
+                        <img src="{{ url_for('static', filename='weather/sunny.svg') }}"
+                            style="width: 280px; height: 280px; object-fit: contain;" alt="Sunny">
                         <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
                             <span class="recommendation-chip"
                                 style="background: rgba(245,158,11,0.9); color: #fff;">Stay cool & hydrated!</span>
                         </div>
                         {% else %}
                         <!-- Cloud/Normal -->
-                        <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json"
-                            background="transparent" speed="1" style="width: 280px; height: 280px;" loop
-                            autoplay></lottie-player>
+                        <img src="{{ url_for('static', filename='weather/cloudy.svg') }}"
+                            style="width: 280px; height: 280px; object-fit: contain;" alt="Cloudy">
                         <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; z-index: 2;">
                             <span class="recommendation-chip"
                                 style="background: rgba(34,211,238,0.9); color: #fff;">Pleasant weather today</span>
