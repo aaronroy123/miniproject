@@ -1,7 +1,6 @@
 const CACHE_NAME = 'health-ai-v1';
 const ASSETS = [
   '/',
-  '/admin',
   '/login',
   '/static/manifest.json',
   '/static/icons/icon-192.png',
