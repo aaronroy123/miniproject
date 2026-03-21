@@ -1370,10 +1370,7 @@
                         <div class="widget-unit">°C</div>
                     </div>
                     <div class="widget-icon-container">
-                        <lottie-player id="widget-lottie"
-                            src="https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json" background="transparent"
-                            speed="1" loop autoplay
-                            style="width: 100%; height: 100%; object-fit: cover;"></lottie-player>
+                        <img id="widget-icon-img" src="/static/weather/cloudy.svg" alt="Weather" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
                     </div>
                 </div>
                 <div class="widget-details">
@@ -1407,60 +1404,67 @@
                     const rainEl = document.getElementById('widget-rain');
                     const riskEl = document.getElementById('widget-risk');
                     const riskIcon = document.getElementById('widget-risk-icon');
-                    const lottieEl = document.getElementById('widget-lottie');
+                    const iconImg = document.getElementById('widget-icon-img');
+
+                    const loadWidgetData = (lat, lon) => {
+                        fetch(`/api/weather_coords?lat=${lat}&lon=${lon}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.error) throw new Error(data.error);
+
+                                // Update UI
+                                tempEl.textContent = Math.round(data.temperature);
+                                cityEl.textContent = data.name || 'Current Location';
+                                humEl.textContent = Math.round(data.humidity);
+                                rainEl.textContent = data.rainfall;
+
+                                // Risk Color Coding
+                                if (data.risk === 0) {
+                                    riskEl.textContent = 'Low';
+                                    riskEl.style.color = '#34d399';
+                                    riskIcon.style.color = '#34d399';
+                                    riskIcon.className = 'fas fa-shield-alt';
+                                } else if (data.risk === 1) {
+                                    riskEl.textContent = 'Med';
+                                    riskEl.style.color = '#fbbf24';
+                                    riskIcon.style.color = '#fbbf24';
+                                    riskIcon.className = 'fas fa-exclamation-triangle';
+                                } else {
+                                    riskEl.textContent = 'High';
+                                    riskEl.style.color = '#f87171';
+                                    riskIcon.style.color = '#f87171';
+                                    riskIcon.className = 'fas fa-radiation-alt';
+                                }
+
+                                // Dynamic Icon Based on Weather
+                                if (data.rainfall > 0) {
+                                    iconImg.src = "/static/weather/rainy.svg";
+                                } else if (data.temperature >= 32) {
+                                    iconImg.src = "/static/weather/sunny.svg";
+                                } else {
+                                    iconImg.src = "/static/weather/cloudy.svg";
+                                }
+
+                                // Reveal widget
+                                widget.classList.add('loaded');
+                            })
+                            .catch(err => {
+                                console.log('Error fetching local weather:', err);
+                            });
+                    };
 
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             (position) => {
-                                fetch(`/api/weather_coords?lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (data.error) throw new Error(data.error);
-
-                                        // Update UI
-                                        tempEl.textContent = Math.round(data.temperature);
-                                        cityEl.textContent = data.city || 'Current Location';
-                                        humEl.textContent = Math.round(data.humidity);
-                                        rainEl.textContent = data.rainfall;
-
-                                        // Risk Color Coding
-                                        if (data.risk === 0) {
-                                            riskEl.textContent = 'Low';
-                                            riskEl.style.color = '#34d399';
-                                            riskIcon.style.color = '#34d399';
-                                            riskIcon.className = 'fas fa-shield-alt';
-                                        } else if (data.risk === 1) {
-                                            riskEl.textContent = 'Med';
-                                            riskEl.style.color = '#fbbf24';
-                                            riskIcon.style.color = '#fbbf24';
-                                            riskIcon.className = 'fas fa-exclamation-triangle';
-                                        } else {
-                                            riskEl.textContent = 'High';
-                                            riskEl.style.color = '#f87171';
-                                            riskIcon.style.color = '#f87171';
-                                            riskIcon.className = 'fas fa-radiation-alt';
-                                        }
-
-                                        // Dynamic Lottie Map Based on Weather
-                                        if (data.rainfall > 0) {
-                                            lottieEl.load("https://assets3.lottiefiles.com/packages/lf20_rpC1Rd.json"); // Rainy
-                                        } else if (data.temperature >= 32) {
-                                            lottieEl.load("https://assets9.lottiefiles.com/packages/lf20_xlky4kvh.json"); // Hot
-                                        } else {
-                                            lottieEl.load("https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json"); // Cloudy
-                                        }
-
-                                        // Reveal widget
-                                        widget.classList.add('loaded');
-                                    })
-                                    .catch(err => {
-                                        console.log('Error fetching local weather:', err);
-                                    });
+                                loadWidgetData(position.coords.latitude, position.coords.longitude);
                             },
                             (error) => {
-                                console.log('Geolocation denied or failed. Premium widget will not display.');
+                                console.log('Geolocation denied or failed. Loading default widget location.');
+                                loadWidgetData(9.9312, 76.2673); // Default to Kochi
                             }
                         );
+                    } else {
+                        loadWidgetData(9.9312, 76.2673); // Default to Kochi
                     }
 
                     // --- Web Push Subscription Logic ---
@@ -1468,7 +1472,8 @@
                         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
                         try {
-                            const registration = await navigator.serviceWorker.ready;
+                            const registration = await navigator.serviceWorker.register('/static/sw.js');
+                            await navigator.serviceWorker.ready;
                             let subscription = await registration.pushManager.getSubscription();
 
                             if (!subscription) {

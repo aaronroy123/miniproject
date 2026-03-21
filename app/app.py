@@ -276,5 +276,9 @@ def send_push():
             
     return {"status": "success", "sent_to": success_count, "total_subscriptions": len(subs)}
 
+@app.route('/.well-known/assetlinks.json')
+def assetlinks():
+    return app.send_static_file('assetlinks.json')
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
