@@ -21,8 +21,15 @@ try:
     with open('data/vapid.json', 'r') as f:
         VAPID_KEYS = json.load(f)
 except Exception as e:
-    VAPID_KEYS = {"public_key": "", "private_key": ""}
-    print("Warning: VAPID keys not found. Push notifications won't work.")
+    # Fallback to Environment Variables (useful for Render)
+    vapid_pub = os.environ.get("VAPID_PUBLIC_KEY")
+    vapid_priv = os.environ.get("VAPID_PRIVATE_KEY")
+    
+    if vapid_pub and vapid_priv:
+        VAPID_KEYS = {"public_key": vapid_pub, "private_key": vapid_priv}
+    else:
+        VAPID_KEYS = {"public_key": "", "private_key": ""}
+        print("Warning: VAPID keys not found. Push notifications won't work.")
 
 VAPID_CLAIMS = {
     "sub": "mailto:admin@waterborne-ai.com"
