@@ -1111,6 +1111,178 @@
             outline: 2px solid var(--accent-cyan);
             outline-offset: 2px;
         }
+
+        /* Premium Temperature Widget */
+        .premium-widget-container {
+            max-width: 450px;
+            margin: 3rem auto 0;
+            position: relative;
+            z-index: 10;
+            border-radius: 30px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: none;
+            /* Hide until loaded */
+        }
+
+        .premium-widget-container.loaded {
+            display: flex;
+            animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .premium-widget-container:hover {
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .widget-glow {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(34, 211, 238, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .widget-location {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 0.5rem 1.2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .widget-live-badge {
+            font-size: 0.8rem;
+            color: var(--accent-emerald);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(16, 185, 129, 0.15);
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .widget-live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-emerald);
+            animation: pulse 2s infinite;
+        }
+
+        .widget-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            width: 100%;
+            margin-bottom: 2.5rem;
+        }
+
+        .widget-temp-block {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .widget-temp {
+            font-family: 'Sora', sans-serif;
+            font-size: 6rem;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #a5f3fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+            letter-spacing: -2px;
+        }
+
+        .widget-unit {
+            font-family: 'Sora', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 0.5rem;
+        }
+
+        .widget-icon-container {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.4));
+        }
+
+        .widget-details {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .widget-detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .widget-detail-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
+        }
+
+        .widget-detail-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -1178,6 +1350,170 @@
                 <i class="fas fa-search-location"></i>
                 Analyze District Risk
             </a>
+
+            <!-- Premium Home Screen Widget -->
+            <div id="premium-weather-widget" class="premium-widget-container">
+                <div class="widget-glow"></div>
+                <div class="widget-header">
+                    <div class="widget-location">
+                        <i class="fas fa-location-arrow" style="color: var(--accent-cyan);"></i>
+                        <span id="widget-city">Locating...</span>
+                    </div>
+                    <div class="widget-live-badge">
+                        <div class="widget-live-dot"></div>
+                        Live
+                    </div>
+                </div>
+                <div class="widget-main">
+                    <div class="widget-temp-block">
+                        <div class="widget-temp" id="widget-temp">--</div>
+                        <div class="widget-unit">°C</div>
+                    </div>
+                    <div class="widget-icon-container">
+                        <lottie-player id="widget-lottie"
+                            src="https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json" background="transparent"
+                            speed="1" loop autoplay
+                            style="width: 100%; height: 100%; object-fit: cover;"></lottie-player>
+                    </div>
+                </div>
+                <div class="widget-details">
+                    <div class="widget-detail-item">
+                        <i class="fas fa-tint" style="color: #60a5fa; font-size: 1.2rem;"></i>
+                        <div class="widget-detail-value"><span id="widget-humidity">--</span>%</div>
+                        <div class="widget-detail-label">Humidity</div>
+                    </div>
+                    <div class="widget-detail-item">
+                        <i class="fas fa-cloud-rain" style="color: #818cf8; font-size: 1.2rem;"></i>
+                        <div class="widget-detail-value"><span id="widget-rain">--</span><span
+                                style="font-size: 0.8rem;">mm</span></div>
+                        <div class="widget-detail-label">Rainfall</div>
+                    </div>
+                    <div class="widget-detail-item">
+                        <i class="fas fa-shield-virus" id="widget-risk-icon"
+                            style="color: #34d399; font-size: 1.2rem;"></i>
+                        <div class="widget-detail-value" id="widget-risk" style="color: #34d399;">Low</div>
+                        <div class="widget-detail-label">Risk Level</div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                // Premium Widget Geolocation & Fetch on Load
+                document.addEventListener('DOMContentLoaded', () => {
+                    const widget = document.getElementById('premium-weather-widget');
+                    const tempEl = document.getElementById('widget-temp');
+                    const cityEl = document.getElementById('widget-city');
+                    const humEl = document.getElementById('widget-humidity');
+                    const rainEl = document.getElementById('widget-rain');
+                    const riskEl = document.getElementById('widget-risk');
+                    const riskIcon = document.getElementById('widget-risk-icon');
+                    const lottieEl = document.getElementById('widget-lottie');
+
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                fetch(`/api/weather_coords?lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (data.error) throw new Error(data.error);
+
+                                        // Update UI
+                                        tempEl.textContent = Math.round(data.temperature);
+                                        cityEl.textContent = data.city || 'Current Location';
+                                        humEl.textContent = Math.round(data.humidity);
+                                        rainEl.textContent = data.rainfall;
+
+                                        // Risk Color Coding
+                                        if (data.risk === 0) {
+                                            riskEl.textContent = 'Low';
+                                            riskEl.style.color = '#34d399';
+                                            riskIcon.style.color = '#34d399';
+                                            riskIcon.className = 'fas fa-shield-alt';
+                                        } else if (data.risk === 1) {
+                                            riskEl.textContent = 'Med';
+                                            riskEl.style.color = '#fbbf24';
+                                            riskIcon.style.color = '#fbbf24';
+                                            riskIcon.className = 'fas fa-exclamation-triangle';
+                                        } else {
+                                            riskEl.textContent = 'High';
+                                            riskEl.style.color = '#f87171';
+                                            riskIcon.style.color = '#f87171';
+                                            riskIcon.className = 'fas fa-radiation-alt';
+                                        }
+
+                                        // Dynamic Lottie Map Based on Weather
+                                        if (data.rainfall > 0) {
+                                            lottieEl.load("https://assets3.lottiefiles.com/packages/lf20_rpC1Rd.json"); // Rainy
+                                        } else if (data.temperature >= 32) {
+                                            lottieEl.load("https://assets9.lottiefiles.com/packages/lf20_xlky4kvh.json"); // Hot
+                                        } else {
+                                            lottieEl.load("https://assets10.lottiefiles.com/packages/lf20_KUFdS6.json"); // Cloudy
+                                        }
+
+                                        // Reveal widget
+                                        widget.classList.add('loaded');
+                                    })
+                                    .catch(err => {
+                                        console.log('Error fetching local weather:', err);
+                                    });
+                            },
+                            (error) => {
+                                console.log('Geolocation denied or failed. Premium widget will not display.');
+                            }
+                        );
+                    }
+
+                    // --- Web Push Subscription Logic ---
+                    async function subscribeToPush() {
+                        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+                        try {
+                            const registration = await navigator.serviceWorker.ready;
+                            let subscription = await registration.pushManager.getSubscription();
+
+                            if (!subscription) {
+                                const response = await fetch('/api/vapid_public_key');
+                                const data = await response.json();
+                                const convertedVapidKey = urlBase64ToUint8Array(data.public_key);
+
+                                subscription = await registration.pushManager.subscribe({
+                                    userVisibleOnly: true,
+                                    applicationServerKey: convertedVapidKey
+                                });
+
+                                await fetch('/api/subscribe', {
+                                    method: 'POST',
+                                    body: JSON.stringify(subscription),
+                                    headers: { 'Content-Type': 'application/json' }
+                                });
+                                console.log("Subscribed to push notifications successfully!");
+                            }
+                        } catch (e) {
+                            console.error('Error subscribing to push:', e);
+                        }
+                    }
+
+                    function urlBase64ToUint8Array(base64String) {
+                        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                        const rawData = window.atob(base64);
+                        const outputArray = new Uint8Array(rawData.length);
+                        for (let i = 0; i < rawData.length; ++i) {
+                            outputArray[i] = rawData.charCodeAt(i);
+                        }
+                        return outputArray;
+                    }
+
+                    // Request permission on load
+                    if (window.Notification && Notification.permission === 'default') {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === 'granted') subscribeToPush();
+                        });
+                    } else if (window.Notification && Notification.permission === 'granted') {
+                        subscribeToPush();
+                    }
+                });
+            </script>
         </div>
     </section>
     <!-- District Quick Chips (Heat Strip) -->

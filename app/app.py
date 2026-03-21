@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -7,7 +8,25 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from model.predict import predict_risk
 from utils.weather import get_weather_data, search_cities, get_weather_by_coords
 
+try:
+    from pywebpush import webpush, WebPushException
+except ImportError:
+    webpush = None
+
 app = Flask(__name__)
+app.secret_key = "super_secret_secure_key_2026"  # In production, use enc vars
+
+# Load VAPID keys
+try:
+    with open('data/vapid.json', 'r') as f:
+        VAPID_KEYS = json.load(f)
+except Exception as e:
+    VAPID_KEYS = {"public_key": "", "private_key": ""}
+    print("Warning: VAPID keys not found. Push notifications won't work.")
+
+VAPID_CLAIMS = {
+    "sub": "mailto:admin@waterborne-ai.com"
+}
 app.secret_key = "super_secret_secure_key_2026"  # In production, use enc vars
 
 # Kerala district → city mapping
@@ -204,6 +223,58 @@ def api_weather_coords():
     data["risk"] = risk
     
     return data
+
+@app.route("/api/vapid_public_key")
+def vapid_public_key():
+    return {"public_key": VAPID_KEYS.get("public_key")}
+
+@app.route("/api/subscribe", methods=["POST"])
+def subscribe():
+    subscription_info = request.get_json()
+    if not subscription_info:
+        return {"error": "Invalid subscription data"}, 400
+        
+    try:
+        with open('data/subscriptions.json', 'r') as f:
+            subs = json.load(f)
+    except:
+        subs = []
+        
+    # Prevent duplicates based on endpoint
+    if not any(s.get('endpoint') == subscription_info.get('endpoint') for s in subs):
+        subs.append(subscription_info)
+        with open('data/subscriptions.json', 'w') as f:
+            json.dump(subs, f)
+            
+    return {"status": "success"}, 201
+
+@app.route("/api/send_push", methods=["POST"])
+def send_push():
+    payload = request.get_json() or {"title": "Test Alert", "body": "This is a test web push notification!"}
+    
+    if not webpush:
+        return {"error": "pywebpush not installed"}, 500
+        
+    try:
+        with open('data/subscriptions.json', 'r') as f:
+            subs = json.load(f)
+    except:
+        subs = []
+        
+    success_count = 0
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info=sub,
+                data=json.dumps(payload),
+                vapid_private_key=VAPID_KEYS.get("private_key"),
+                vapid_claims=VAPID_CLAIMS
+            )
+            success_count += 1
+        except Exception as ex:
+            print("Push failed to endpoint:", repr(ex))
+            
+    return {"status": "success", "sent_to": success_count, "total_subscriptions": len(subs)}
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")

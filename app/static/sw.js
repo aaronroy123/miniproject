@@ -25,3 +25,23 @@ self.addEventListener('fetch', (event) => {
       .then((response) => response || fetch(event.request))
   );
 });
+
+self.addEventListener('push', function (event) {
+  let data = {};
+  if (event.data) {
+    data = event.data.json();
+  }
+  const title = data.title || "Health AI Alert";
+  const options = {
+    body: data.body || "You have a new alert.",
+    icon: '/static/icons/icon-192.png',
+    badge: '/static/icons/icon-192.png',
+    vibrate: [200, 100, 200]
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  event.waitUntil(clients.openWindow('/'));
+});
