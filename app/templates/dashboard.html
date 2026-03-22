@@ -867,6 +867,107 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
+        /* Risk Explanation Styles */
+        .risk-explanation-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            text-align: left;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .explanation-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .explanation-trigger {
+            background: rgba(34, 211, 238, 0.1);
+            border-left: 3px solid var(--accent-cyan);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .historical-context {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .context-item {
+            display: flex;
+            gap: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .context-icon {
+            color: var(--accent-cyan);
+            margin-top: 3px;
+        }
+
+        .precautions-section {
+            margin-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 1.5rem;
+        }
+
+        .precautions-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .precautions-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .precaution-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: 12px;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .precaution-item:hover {
+            transform: translateY(-2px);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .precaution-emoji {
+            font-size: 1.5rem;
+        }
+
+        .precaution-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .data-source-tag {
+            display: inline-block;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-style: italic;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -1764,6 +1865,66 @@
                     </div>
                 </div>
                 {% endif %}
+
+                {% if risk_explanation %}
+                <!-- Why This Risk? Data-Driven Explanation -->
+                <div class="risk-explanation-card">
+                    <div class="explanation-header">
+                        <i class="fas fa-microscope"></i>
+                        Why This Risk? (Data-Driven Analysis)
+                    </div>
+                    
+                    <div class="explanation-trigger">
+                        {{ risk_explanation.primary_trigger }}
+                    </div>
+
+                    <div class="historical-context">
+                        <div class="context-item">
+                            <i class="fas fa-history context-icon"></i>
+                            <span><strong>Historical Context:</strong> {{ risk_explanation.similar_events }}</span>
+                        </div>
+                        <div class="context-item">
+                            <i class="fas fa-map-marker-alt context-icon"></i>
+                            <span><strong>Keralite Record:</strong> {{ risk_explanation.kerala_example }}</span>
+                        </div>
+                    </div>
+
+                    {% if risk_precautions %}
+                    <div class="precautions-section">
+                        <div class="explanation-header" style="color: {{ risk_precautions.color }}; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+                            <i class="fas {{ risk_precautions.icon }}"></i>
+                            {{ risk_precautions.title }}
+                        </div>
+                        
+                        <div class="precautions-grid">
+                            {% for emoji, text in risk_precautions.immediate %}
+                            <div class="precaution-item">
+                                <span class="precaution-emoji">{{ emoji }}</span>
+                                <span class="precaution-text"><strong>Immediate:</strong> {{ text }}</span>
+                            </div>
+                            {% endfor %}
+                            
+                            {% for emoji, text in risk_precautions.community %}
+                            <div class="precaution-item">
+                                <span class="precaution-emoji">{{ emoji }}</span>
+                                <span class="precaution-text"><strong>Advice:</strong> {{ text }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; background: rgba(0,0,0,0.2); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                            <strong>Medical Note:</strong> {{ risk_precautions.health_note }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <div class="data-source-tag">
+                        <i class="fas fa-info-circle"></i>
+                        Source: {{ risk_explanation.data_source }}
+                    </div>
+                </div>
+                {% endif %}
+
                 {% else %}
                 <div class="empty-state">
                     <div class="empty-icon">

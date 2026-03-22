@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask, render_template, request, session, redirect, url_for
 from model.predict import predict_risk
 from utils.weather import get_weather_data, search_cities, get_weather_by_coords
+from utils.risk_explain import generate_risk_explanation, PRECAUTIONS
 
 try:
     from pywebpush import webpush, WebPushException
@@ -59,6 +60,8 @@ def dashboard():
     weather = None
     message = None
     selected_district = None
+    risk_explanation = None
+    risk_precautions = None
 
     if request.method == "POST":
         user_input = request.form.get("district")
@@ -88,7 +91,21 @@ def dashboard():
 
             # Pass the full dict to the template
             weather = weather_data
-            weather["risk"] = risk # Add risk to the object for template use if needed
+            weather["risk"] = risk
+
+            # Generate explanation for Medium and High risk
+            risk_explanation = None
+            risk_precautions = None
+            if risk in [1, 2]:
+                risk_explanation = generate_risk_explanation(
+                    rainfall=weather_data["rainfall"],
+                    temperature=weather_data["temperature"],
+                    humidity=weather_data["humidity"],
+                    flood=weather_data["flood"],
+                    risk_level=risk,
+                    district=user_input  # The Kerala district name
+                )
+                risk_precautions = PRECAUTIONS.get(risk)
 
             if risk == 0:
                 message = "LOW RISK: Situation is safe."
@@ -102,7 +119,9 @@ def dashboard():
                 districts=list(DISTRICTS.keys()),
                 selected_district=None,
                 weather=None,
-                message=f"Error fetching data: {str(e)}"
+                message=f"Error fetching data: {str(e)}",
+                risk_explanation=None,
+                risk_precautions=None,
             )
 
     return render_template(
@@ -110,7 +129,9 @@ def dashboard():
         districts=list(DISTRICTS.keys()),
         selected_district=selected_district,
         weather=weather,
-        message=message
+        message=message,
+        risk_explanation=risk_explanation,
+        risk_precautions=risk_precautions,
     )
 
 @app.route("/login", methods=["GET", "POST"])
