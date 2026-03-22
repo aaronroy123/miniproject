@@ -24,12 +24,12 @@ data = pd.read_csv("data/merged_real_data.csv")
 
 print(f"Loaded {len(data)} real training records (2013-2023)\n")
 
-# Apply risk label using decadal data-driven tertiles:
-#   0 = Low     (< 25,000 cases annually)
-#   1 = Medium  (25,000 - 46,000 cases)
+# Apply risk label using decadal data-driven thresholds:
+#   0 = Low     (< 20,000 cases annually)
+#   1 = Medium  (20,000 - 46,000 cases)
 #   2 = High    (> 46,000 cases)
 def risk_label(cases):
-    if cases < 25000:
+    if cases < 20000:
         return 0
     elif cases < 46000:
         return 1

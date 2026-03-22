@@ -19,12 +19,17 @@ def predict_risk(rainfall, temperature, humidity, flood):
     X = pd.DataFrame([[rainfall, temperature, humidity, flood]], columns=FEATURES)
     prediction = model.predict(X)[0]
     
-    # Heuristic Override: Reduce false positives on dry, non-flood days
-    # Waterborne diseases require water — very dry conditions suppress transmission
-    if rainfall < 2.0 and flood == 0:
+    # 1. High Humidity Sensitivity Booster (Clinical safety for tropical zones)
+    # If humidity is high, it's rarely "safe" in Kerala even without rain.
+    if humidity >= 80 and prediction == 0:
+        prediction = 1
+        
+    # 2. Heuristic Override: Moderate false positives on extremely dry, non-flood days
+    # Only downgrade if humidity is also low.
+    if rainfall < 1.0 and flood == 0 and humidity < 75:
         if prediction == 2:  # Downgrade High to Medium
             return int(1)
-        if prediction == 1 and humidity < 75:  # Downgrade Medium to Low
+        if prediction == 1:  # Downgrade Medium to Low
             return int(0)
             
     return int(prediction)
