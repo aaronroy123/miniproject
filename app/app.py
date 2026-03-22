@@ -241,6 +241,8 @@ def subscribe():
     if not subscription_info:
         return {"error": "Invalid subscription data"}, 400
         
+    import os
+    os.makedirs('data', exist_ok=True)
     try:
         with open('data/subscriptions.json', 'r') as f:
             subs = json.load(f)

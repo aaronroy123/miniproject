@@ -1459,8 +1459,13 @@
                                 loadWidgetData(position.coords.latitude, position.coords.longitude);
                             },
                             (error) => {
-                                console.log('Geolocation denied or failed. Loading default widget location.');
+                                console.log('Geolocation denied or failed (' + error.message + '). Loading default widget location.');
                                 loadWidgetData(9.9312, 76.2673); // Default to Kochi
+                            },
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 15000,
+                                maximumAge: 0
                             }
                         );
                     } else {
