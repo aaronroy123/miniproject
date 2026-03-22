@@ -1,4 +1,4 @@
-const CACHE_NAME = 'health-ai-v1';
+const CACHE_NAME = 'health-ai-v2';
 const ASSETS = [
   '/',
   '/login',
@@ -12,13 +12,33 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Force the waiting service worker to become the active one
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(ASSETS))
   );
 });
 
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter((cacheName) => cacheName !== CACHE_NAME)
+          .map((cacheName) => caches.delete(cacheName))
+      );
+    })
+  );
+});
+
 self.addEventListener('fetch', (event) => {
+  // Use Network-First for root and login to ensure updates are seen
+  if (event.request.url.endsWith('/') || event.request.url.includes('/login')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => response || fetch(event.request))
