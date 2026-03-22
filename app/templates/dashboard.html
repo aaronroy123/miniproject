@@ -1455,8 +1455,11 @@
 
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                loadWidgetData(position.coords.latitude, position.coords.longitude);
+                            },
                             (error) => {
-                                console.log('Geolocation denied or failed (' + error.message + '). Falling back to IP-based location.');
+                                console.log('Geolocation denied or failed (' + (error.message || 'unknown') + '). Falling back to IP-based location.');
                                 fetch('https://ipapi.co/json/')
                                     .then(res => res.json())
                                     .then(data => {
