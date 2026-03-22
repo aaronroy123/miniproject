@@ -2,9 +2,9 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.yourdomain.healthai",
+    "package_name": "com.onrender.miniproject_biwg.twa",
     "sha256_cert_fingerprints": [
-      "REPLACE_ME_WITH_YOUR_SHA256_FINGERPRINT_FROM_BUBBLEWRAP"
+      "F2:9E:6B:E9:54:E1:A1:FF:0F:7D:95:45:51:FF:81:CE:CA:45:75:F5:71:A7:78:BA:05:C6:12:18:8F:84:0F:84"
     ]
   }
 }]
