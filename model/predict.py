@@ -10,10 +10,10 @@ model = joblib.load(MODEL_PATH)
 # Features used during training (must match train_model_real.py)
 FEATURES = ["rainfall_mm", "temperature", "humidity", "flood"]
 
-# Risk label thresholds (based on real DHS Kerala 2022 data):
-#   0 = Low    (< 15,000 annual waterborne cases per district)
-#   1 = Medium (15,000 - 50,000 cases)
-#   2 = High   (> 50,000 cases)
+# Risk label thresholds (based on 10-year Kerala DHS 2013-2023 dataset):
+#   0 = Low    (< 25,000 annual waterborne cases per district)
+#   1 = Medium (25,000 - 46,000 cases)
+#   2 = High   (> 46,000 cases)
 
 def predict_risk(rainfall, temperature, humidity, flood):
     X = pd.DataFrame([[rainfall, temperature, humidity, flood]], columns=FEATURES)

@@ -19,26 +19,29 @@ from sklearn.metrics import accuracy_score, classification_report
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Load real merged dataset
+# Load real decadal dataset
 data = pd.read_csv("data/merged_real_data.csv")
 
-print(f"Loaded {len(data)} real training records\n")
+print(f"Loaded {len(data)} real training records (2013-2023)\n")
 
-# Apply risk label using data-driven tertiles
+# Apply risk label using decadal data-driven tertiles:
+#   0 = Low     (< 25,000 cases annually)
+#   1 = Medium  (25,000 - 46,000 cases)
+#   2 = High    (> 46,000 cases)
 def risk_label(cases):
-    if cases < 20000:
-        return 0   # Low     (~4 districts: Pathanamthitta, Idukki, Kollam, Kottayam)
-    elif cases < 43000:
-        return 1   # Medium  (~4 districts: Alappuzha, Thrissur, Wayanad, Palakkad)
+    if cases < 25000:
+        return 0
+    elif cases < 46000:
+        return 1
     else:
-        return 2   # High    (~4 districts: Thiruvananthapuram, Ernakulam, Kannur, Malappuram)
+        return 2
 
 data["risk_level"] = data["waterborne_cases"].apply(risk_label)
 
-print("\nRisk distribution:")
+print("\nRisk distribution (Decadal):")
 print(data.groupby("risk_level")[["district"]].count().rename(columns={"district": "count"}))
-print("\nLabeled data:")
-print(data[["district", "waterborne_cases", "risk_level"]])
+print("\nLabeled data (Sample):")
+print(data[["district", "year", "waterborne_cases", "risk_level"]].head(15))
 
 # Features and target
 FEATURES = ["rainfall_mm", "temperature", "humidity", "flood"]
