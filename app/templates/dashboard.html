@@ -1455,17 +1455,25 @@
 
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                loadWidgetData(position.coords.latitude, position.coords.longitude);
-                            },
                             (error) => {
-                                console.log('Geolocation denied or failed (' + error.message + '). Loading default widget location.');
-                                loadWidgetData(9.9312, 76.2673); // Default to Kochi
+                                console.log('Geolocation denied or failed (' + error.message + '). Falling back to IP-based location.');
+                                fetch('https://ipapi.co/json/')
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (data.latitude && data.longitude) {
+                                            loadWidgetData(data.latitude, data.longitude);
+                                        } else {
+                                            loadWidgetData(9.9312, 76.2673); // Ultimate fallback to Kochi
+                                        }
+                                    })
+                                    .catch(e => {
+                                        loadWidgetData(9.9312, 76.2673); // Ultimate fallback to Kochi
+                                    });
                             },
                             {
-                                enableHighAccuracy: true,
-                                timeout: 15000,
-                                maximumAge: 0
+                                enableHighAccuracy: false, // Prevents indoors GPS timeout on mobile
+                                timeout: 10000,
+                                maximumAge: 300000 // Cache for 5 mins
                             }
                         );
                     } else {
