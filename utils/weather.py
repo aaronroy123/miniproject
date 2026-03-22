@@ -69,17 +69,32 @@ def get_weather_by_coords(lat, lon):
     """
     Fetch weather data by latitude and longitude.
     """
-    url = (
+    weather_url = (
         f"https://api.openweathermap.org/data/2.5/weather"
         f"?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
     )
+    geo_url = (
+        f"http://api.openweathermap.org/geo/1.0/reverse"
+        f"?lat={lat}&lon={lon}&limit=1&appid={API_KEY}"
+    )
 
     try:
-        response = requests.get(url)
+        response = requests.get(weather_url)
         data = response.json()
 
         if "main" not in data:
             return None
+
+        # Fetch more accurate location name using reverse geocoding API
+        city_name = data.get("name", "Unknown Location")
+        try:
+            geo_resp = requests.get(geo_url)
+            if geo_resp.status_code == 200:
+                geo_data = geo_resp.json()
+                if geo_data:
+                    city_name = geo_data[0].get("name", city_name)
+        except Exception as e:
+            print(f"Reverse geo error: {e}")
 
         temperature = data["main"]["temp"]
         humidity = data["main"]["humidity"]
@@ -95,7 +110,7 @@ def get_weather_by_coords(lat, lon):
         flood = 1 if rainfall > 150 else 0
         
         return {
-            "name": data.get("name", "Unknown Location"),
+            "name": city_name,
             "temp": temperature, # standardizing to 'temperature' in next refactor might be better, but keeping 'temp' for now to match frontend if needed, actually let's standardize to 'temperature' in the object but 'temp' might be used by JS. Let's check app.py usage.
             # actually app.py passes this dict directly to frontend in one case, and extracts values in another.
             # Let's align keys with get_weather_data for consistency.
