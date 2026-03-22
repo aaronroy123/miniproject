@@ -11,8 +11,10 @@ Uses:
 import pandas as pd
 import os
 
-# Load the decadal dataset (2013-2023)
-DATA_PATH = r"d:\waterborne-disease-ai\data\merged_real_data.csv"
+# Path to the decadal dataset (2013-2023)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(BASE_DIR, "data", "merged_real_data.csv")
+
 try:
     if os.path.exists(DATA_PATH):
         HISTORICAL_DF = pd.read_csv(DATA_PATH)
