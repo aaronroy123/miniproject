@@ -127,6 +127,47 @@ def find_climate_match(rainfall, humidity, flood):
             
     return best_year
 
+def normalize_kerala_district(name: str):
+    """
+    Normalizes a location string to a formal Kerala district name.
+    Handles common misspellings and name variants.
+    """
+    if not name:
+        return None
+        
+    name_clean = name.strip().lower()
+    
+    # Direct mapping for common aliases
+    aliases = {
+        "trivandrum": "Thiruvananthapuram",
+        "trivandrum city": "Thiruvananthapuram",
+        "cochin": "Ernakulam",
+        "kochi": "Ernakulam",
+        "quilon": "Kollam",
+        "calicut": "Kozhikode",
+        "trissur": "Thrissur",
+        "palghat": "Palakkad",
+        "alleppey": "Alappuzha",
+        "canannore": "Kannur",
+    }
+    
+    if name_clean in aliases:
+        return aliases[name_clean]
+        
+    # Fuzzy/Substring match for misspellings like "thirvathapuram"
+    # We check if the input is a significant substring of any district
+    for district in KERALA_DISTRICTS:
+        d_lower = district.lower()
+        # If input is >= 6 chars and is a close match
+        if len(name_clean) >= 6:
+            # Check for shared prefix (first 6 chars) or substantial overlap
+            if name_clean[:6] == d_lower[:6] or d_lower[:6] == name_clean[:6]:
+                return district
+            if name_clean in d_lower or d_lower in name_clean:
+                return district
+                
+    return None
+
 def generate_risk_explanation(rainfall, temperature, humidity, flood, risk_level, district=None):
     """
     Generates a data-driven explanation using 10-year historical context.
@@ -138,11 +179,16 @@ def generate_risk_explanation(rainfall, temperature, humidity, flood, risk_level
     factors = []
     explanations: list[dict] = [] # List to hold dictionaries of historical context
     
-    # Check if location is in Kerala
-    is_kerala = district is not None and any(k.lower() in district.lower() for k in KERALA_DISTRICTS)
+    # Normalize district and check if location is in Kerala
+    formal_district = normalize_kerala_district(district)
+    is_kerala = formal_district is not None
     
     # Adaptive Context Source
     context_source = HISTORICAL_CONTEXT if is_kerala else GLOBAL_WHO_CONTEXT
+    
+    # Update local reference to the formal name for data fetching
+    if is_kerala:
+        district = formal_district
     
     # Humidity (Model Weight: 37.3%)
     if humidity >= 88:

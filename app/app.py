@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask, render_template, request, session, redirect, url_for
 from model.predict import predict_risk
 from utils.weather import get_weather_data, search_cities, get_weather_by_coords
-from utils.risk_explain import generate_risk_explanation, PRECAUTIONS
+from utils.risk_explain import generate_risk_explanation, PRECAUTIONS, normalize_kerala_district
 
 try:
     from pywebpush import webpush, WebPushException
@@ -15,7 +15,7 @@ except ImportError:
     webpush = None
 
 app = Flask(__name__)
-app.secret_key = "super_secret_secure_key_2026"  # In production, use enc vars
+app.secret_key = "super_secret_secure_key_2026"  # In production, use env vars
 
 # Load VAPID keys
 try:
@@ -66,8 +66,16 @@ def dashboard():
     if request.method == "POST":
         user_input = request.form.get("district")
         
-        # Try to map district to city if it's in our Kerala list, otherwise use input as is
-        city = DISTRICTS.get(user_input, user_input)
+        # Normalize district name (fuzzy matching for Kerala)
+        formal_name = normalize_kerala_district(user_input)
+        
+        # If it's a known Kerala location, use the formal name for everything
+        if formal_name:
+            selected_district = formal_name
+            city = DISTRICTS.get(formal_name, formal_name)
+        else:
+            selected_district = user_input
+            city = user_input
 
         if not city:
             return render_template(
