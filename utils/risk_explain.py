@@ -36,8 +36,8 @@ HISTORICAL_CONTEXT = {
         "kerala_example": "In 2018 (Peak Flood Year), Idukki recorded high cases when humidity stayed above 88% for weeks."
     },
     "temp_high": {
-        "threshold": 30,
-        "context": "At temperatures above 30°C, bacterial growth in standing water accelerates. Palakkad, the 'hot district' of Kerala, often sees spikes due to this thermal effect.",
+        "threshold": 35,
+        "context": "At temperatures above 35°C, extreme bacterial growth in standing water accelerates. Palakkad, the 'hot district' of Kerala, often sees spikes due to this thermal effect.",
         "kerala_example": "Historical peaks in Palakkad align with mid-summer heatwaves preceding the monsoon."
     },
     "rainfall_high": {
@@ -69,8 +69,8 @@ GLOBAL_WHO_CONTEXT = {
         "kerala_example": "Global monitoring data indicates that coastal and rainforest-adjacent cities reach peak risk levels at these humidity clusters."
     },
     "temp_high": {
-        "context": "According to the World Health Organization, bacterial division rates in stagnant water double for every 5°C increase above 25°C. Temperatures above 30°C are considered a high incubation risk.",
-        "kerala_example": "Southern Hemisphere and Equatorial cities consistently see Leptospirosis outbreaks during coinciding heat and rain events."
+        "context": "According to the World Health Organization, bacterial division rates in stagnant water double for every 5°C increase above 25°C. Temperatures above 35°C are considered a critical incubation risk.",
+        "kerala_example": "Southern Hemisphere and Equatorial cities consistently see Leptospirosis outbreaks during coinciding extreme heat and rain events."
     },
     "rainfall_high": {
         "context": "Monthly rainfall exceeding 150mm is a universal trigger for 'First Flush' runoff, which carries biological contaminants from soil into groundwater and drinking reservoirs.",
@@ -199,8 +199,8 @@ def generate_risk_explanation(rainfall, temperature, humidity, flood, risk_level
         explanations.append(context_source["humidity_high"])
 
     # Temp (Model Weight: 33.8%)
-    if temperature >= 30:
-        factors.append(f"🌡️ High temperature ({temperature}°C) — accelerates pathogen growth")
+    if temperature >= 35:
+        factors.append(f"🌡️ Extreme temperature ({temperature}°C) — accelerates pathogen growth")
         explanations.append(context_source["temp_high"])
 
     # Rainfall (Model Weight: 25.9%)

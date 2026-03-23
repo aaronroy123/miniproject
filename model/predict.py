@@ -24,12 +24,16 @@ def predict_risk(rainfall, temperature, humidity, flood):
     if humidity >= 80 and prediction == 0:
         prediction = 1
         
-    # 2. Heuristic Override: Moderate false positives on extremely dry, non-flood days
-    # Only downgrade if humidity is also low.
+    # 2. Temperature Threshold Suppression (User-Req: 35)
+    # If temp is below 35 and it's dry (no rain/flood), cap risk at Low
+    if temperature < 35 and rainfall < 1.0 and flood == 0:
+        prediction = 0
+             
+    # 3. Dynamic Humidity/Rain Override (Original heuristics)
     if rainfall < 1.0 and flood == 0 and humidity < 75:
         if prediction == 2:  # Downgrade High to Medium
             return int(1)
-        if prediction == 1:  # Downgrade Medium to Low
+        if prediction == 1:  # Downgrade Medium to Low already handled or redundant 
             return int(0)
             
     return int(prediction)
