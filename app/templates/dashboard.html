@@ -2551,7 +2551,13 @@
                             unreadBadge.style.display = 'block';
                         }
                         
+                        let deletedNotifs = JSON.parse(localStorage.getItem('deletedNotifications') || '[]');
+                        let visibleCount = 0;
+                        
                         data.notifications.forEach(notif => {
+                            if (deletedNotifs.includes(notif.id)) return;
+                            visibleCount++;
+                            
                             let riskColor = notif.riskLevel === 'High' ? '#ef4444' : (notif.riskLevel === 'Medium' ? '#f59e0b' : '#10b981');
                             const timeStr = new Date(notif.timestamp).toLocaleString();
                             const item = document.createElement('div');
@@ -2560,12 +2566,17 @@
                             item.style.borderRadius = '8px';
                             item.style.borderLeft = `3px solid ${riskColor}`;
                             item.innerHTML = `
+                                <i class="fas fa-times" onclick="deleteNotif('${notif.id}')" style="cursor: pointer; float: right; color: rgba(255,255,255,0.4); font-size: 0.8rem;" title="Remove Notification"></i>
                                 <div style="font-weight: 600; color: white; font-size: 0.95rem; margin-bottom: 0.25rem;">${notif.title}</div>
                                 <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem; line-height: 1.4; margin-bottom: 0.5rem;">${notif.body}</div>
                                 <div style="color: rgba(255,255,255,0.4); font-size: 0.7rem;">${timeStr}</div>
                             `;
                             notifList.appendChild(item);
                         });
+                        
+                        if (visibleCount === 0) {
+                            notifList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No new notifications</div>';
+                        }
                     } else {
                         notifList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No new notifications</div>';
                     }
@@ -2577,7 +2588,20 @@
             fetchNotifications();
             // Poll every 30 seconds
             setInterval(fetchNotifications, 30000);
+            
+            // Expose the fetch logic globally for the onclick handler
+            window.fetchNotifications = fetchNotifications;
         });
+
+        // Global delete function
+        function deleteNotif(id) {
+            let deletedNotifs = JSON.parse(localStorage.getItem('deletedNotifications') || '[]');
+            if (!deletedNotifs.includes(id)) {
+                deletedNotifs.push(id);
+                localStorage.setItem('deletedNotifications', JSON.stringify(deletedNotifs));
+            }
+            if(window.fetchNotifications) window.fetchNotifications();
+        }
     </script>
 </body>
 
