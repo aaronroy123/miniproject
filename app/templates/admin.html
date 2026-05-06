@@ -22,6 +22,10 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <style>
         :root {
             --bg-primary: #0a0e1a;
@@ -149,6 +153,25 @@
         }
 
         /* Dashboard Grid */
+        .admin-tab {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .admin-tab.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #adminMap {
+            height: 60vh;
+            border-radius: var(--radius);
+            border: 1px solid var(--glass-border);
+        }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -225,19 +248,16 @@
             Admin Center
         </div>
         <ul class="nav-menu">
-            <li class="nav-item active">
+            <li class="nav-item active" data-target="tab-dashboard">
                 <i class="fas fa-columns"></i> Dashboard
             </li>
-            <li class="nav-item">
+            <li class="nav-item" data-target="tab-riskmap">
                 <i class="fas fa-map-marked-alt"></i> Risk Map
             </li>
-            <li class="nav-item">
-                <i class="fas fa-users"></i> Users
-            </li>
-            <li class="nav-item">
+            <li class="nav-item" data-target="tab-alerts">
                 <i class="fas fa-broadcast-tower"></i> Alerts
             </li>
-            <li class="nav-item" style="margin-top: auto;">
+            <li class="nav-item" style="margin-top: auto;" id="nav-logout">
                 <a href="/logout"
                     style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 1rem; width: 100%;">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -258,8 +278,10 @@
             </div>
         </div>
 
-        <!-- Key Metrics -->
-        <div class="grid">
+        <!-- TAB: DASHBOARD -->
+        <div id="tab-dashboard" class="admin-tab active">
+            <!-- Key Metrics -->
+            <div class="grid">
             <div class="card">
                 <div class="card-title">High Risk Districts</div>
                 <div class="metric-value">3</div>
@@ -349,6 +371,7 @@
                             <td style="padding: 1rem; font-family: 'Sora', sans-serif;">{{ district.cases }}</td>
                             <td style="padding: 1rem;">
                                 <button
+                                    class="btn-view-district" data-district="{{ district.name }}"
                                     style="background: transparent; border: 1px solid var(--glass-border); color: var(--accent-cyan); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
                                     View
                                 </button>
@@ -366,12 +389,38 @@
                 Emergency Broadcast System</h3>
             <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Send statewide emergency alerts to all
                 registered health officials and public terminals.</p>
-            <button class="btn-danger" id="openBroadcastModal">
+            <button class="btn-danger" id="openBroadcastModal1">
                 <i class="fas fa-bullhorn"></i>
                 Initiate Broadcast
             </button>
         </div>
+    </div> <!-- END TAB DASHBOARD -->
+
+    <!-- TAB: RISK MAP -->
+    <div id="tab-riskmap" class="admin-tab">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 class="page-title">Statewide Risk Map</h2>
+        </div>
+        <div id="adminMap"></div>
     </div>
+
+
+    <!-- TAB: ALERTS -->
+    <div id="tab-alerts" class="admin-tab">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 class="page-title">Broadcast History</h2>
+            <button class="btn-danger" id="openBroadcastModal2">
+                <i class="fas fa-bullhorn"></i> New Broadcast
+            </button>
+        </div>
+        <div class="card">
+            <div id="adminNotificationsList">
+                <div style="color: var(--text-muted); text-align: center; padding: 2rem;">Loading history...</div>
+            </div>
+        </div>
+    </div>
+
+    </div> <!-- END MAIN CONTENT -->
 
     <!-- Broadcast Modal -->
     <div id="broadcastModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
@@ -390,7 +439,6 @@
             </div>
         </div>
     </div>
-
     <script>
         // Charts
         const ctxRisk = document.getElementById('adminRiskChart').getContext('2d');
@@ -436,13 +484,14 @@
 
         // Modal Logic
         const broadcastModal = document.getElementById('broadcastModal');
-        const openBroadcastModal = document.getElementById('openBroadcastModal');
+        const openBroadcastModal1 = document.getElementById('openBroadcastModal1');
+        const openBroadcastModal2 = document.getElementById('openBroadcastModal2');
         const closeBroadcastModal = document.getElementById('closeBroadcastModal');
         const submitBroadcast = document.getElementById('submitBroadcast');
 
-        openBroadcastModal.addEventListener('click', () => {
-            broadcastModal.style.display = 'flex';
-        });
+        if(openBroadcastModal1) openBroadcastModal1.addEventListener('click', () => { broadcastModal.style.display = 'flex'; });
+        if(openBroadcastModal2) openBroadcastModal2.addEventListener('click', () => { broadcastModal.style.display = 'flex'; });
+
 
         closeBroadcastModal.addEventListener('click', () => {
             broadcastModal.style.display = 'none';
@@ -484,6 +533,136 @@
             submitBroadcast.disabled = false;
         });
 
+        // Tab Switching Logic
+        const navItems = document.querySelectorAll('.nav-item');
+        const tabs = document.querySelectorAll('.admin-tab');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if(item.id === 'nav-logout') return;
+                
+                navItems.forEach(n => n.classList.remove('active'));
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                item.classList.add('active');
+                const targetId = item.getAttribute('data-target');
+                if(targetId) {
+                    document.getElementById(targetId).classList.add('active');
+                    
+                    if(targetId === 'tab-riskmap' && window.adminMap) {
+                        setTimeout(() => window.adminMap.invalidateSize(), 100);
+                    }
+                    if(targetId === 'tab-alerts') {
+                        loadAdminAlerts();
+                    }
+                }
+            });
+        });
+
+        // Map Logic
+        let mapInitialized = false;
+        async function initMap() {
+            if(mapInitialized) return;
+            mapInitialized = true;
+            
+            window.adminMap = L.map('adminMap').setView([10.8505, 76.2711], 7);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(window.adminMap);
+
+            try {
+                const res = await fetch('/api/risk_map');
+                const data = await res.json();
+                
+                // Kerala District roughly coords
+                const coords = {
+                    "Thiruvananthapuram": [8.5241, 76.9366],
+                    "Kollam": [8.8932, 76.6141],
+                    "Pathanamthitta": [9.2648, 76.7870],
+                    "Alappuzha": [9.4981, 76.3388],
+                    "Kottayam": [9.5916, 76.5222],
+                    "Idukki": [9.8500, 76.9700],
+                    "Ernakulam": [9.9816, 76.2999],
+                    "Thrissur": [10.5276, 76.2144],
+                    "Palakkad": [10.7867, 76.6548],
+                    "Malappuram": [11.0733, 76.0740],
+                    "Kozhikode": [11.2588, 75.7804],
+                    "Wayanad": [11.6854, 76.1320],
+                    "Kannur": [11.8745, 75.3704],
+                    "Kasaragod": [12.4996, 74.9869]
+                };
+                
+                for(const [district, risk] of Object.entries(data)) {
+                    if(!coords[district]) continue;
+                    const color = risk > 1 ? '#ef4444' : (risk === 1 ? '#f59e0b' : '#10b981');
+                    L.circleMarker(coords[district], {
+                        color: color, fillColor: color, fillOpacity: 0.5, radius: 12, weight: 2
+                    }).addTo(window.adminMap)
+                    .bindPopup(`<strong style="color:black">${district}</strong><br><span style="color:black">Risk Area: Level ${risk}</span>`);
+                }
+            } catch(e) { console.error(e); }
+        }
+        initMap();
+
+        // Wire up District 'View' buttons
+        document.querySelectorAll('.btn-view-district').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const districtName = btn.getAttribute('data-district');
+                
+                // Switch to Risk Map tab
+                const mapNavItem = document.querySelector('.nav-item[data-target="tab-riskmap"]');
+                if(mapNavItem) mapNavItem.click();
+                
+                // Wait for tab animation, then zoom
+                setTimeout(() => {
+                    const coords = {
+                        "Thiruvananthapuram": [8.5241, 76.9366],
+                        "Kollam": [8.8932, 76.6141],
+                        "Pathanamthitta": [9.2648, 76.7870],
+                        "Alappuzha": [9.4981, 76.3388],
+                        "Kottayam": [9.5916, 76.5222],
+                        "Idukki": [9.8500, 76.9700],
+                        "Ernakulam": [9.9816, 76.2999],
+                        "Thrissur": [10.5276, 76.2144],
+                        "Palakkad": [10.7867, 76.6548],
+                        "Malappuram": [11.0733, 76.0740],
+                        "Kozhikode": [11.2588, 75.7804],
+                        "Wayanad": [11.6854, 76.1320],
+                        "Kannur": [11.8745, 75.3704],
+                        "Kasaragod": [12.4996, 74.9869]
+                    };
+                    if(window.adminMap && coords[districtName]) {
+                        window.adminMap.setView(coords[districtName], 10, {animate: true, duration: 1.5});
+                    }
+                }, 150);
+            });
+        });
+
+        async function loadAdminAlerts() {
+            const list = document.getElementById('adminNotificationsList');
+            try {
+                const res = await fetch('/api/notifications');
+                const data = await res.json();
+                if(data.notifications && data.notifications.length > 0) {
+                    list.innerHTML = data.notifications.map(n => {
+                        let riskColor = n.riskLevel === 'High' ? '#ef4444' : (n.riskLevel === 'Medium' ? '#f59e0b' : '#10b981');
+                        return `
+                        <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; gap: 1rem; align-items: flex-start;">
+                            <div style="min-width: 10px; height: 10px; border-radius: 50%; background: ${riskColor}; margin-top: 6px;"></div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: white; font-size: 1.1rem; margin-bottom: 0.5rem;">${n.title}</div>
+                                <div style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.5;">${n.body}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);"><i class="far fa-clock"></i> ${new Date(n.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `}).join('');
+                } else {
+                    list.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 2rem;">No alerts found.</div>';
+                }
+            } catch(e) {
+                list.innerHTML = '<div style="color: red; text-align: center; padding: 2rem;">Error loading alerts.</div>';
+            }
+        }
     </script>
 </body>
 
