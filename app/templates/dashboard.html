@@ -1422,6 +1422,18 @@
                     <i class="fas fa-map-marker-alt"></i>
                     Kerala
                 </div>
+                <div class="notification-container" style="position: relative;">
+                    <button id="notificationBtn" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary); padding: 0.6rem; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative;">
+                        <i class="fas fa-bell"></i>
+                        <span id="unreadBadge" style="display: none; position: absolute; top: 0px; right: 0px; background: #ef4444; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bg-primary);"></span>
+                    </button>
+                    <div id="notificationDropdown" style="display: none; position: absolute; right: 0; top: 120%; width: 320px; background: rgba(10, 14, 26, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: var(--glass-shadow); padding: 1rem; z-index: 1000; max-height: 400px; overflow-y: auto;">
+                        <h4 style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; color: white;">Latest Alerts</h4>
+                        <div id="notificationList" style="display: flex; flex-direction: column; gap: 0.8rem;">
+                            <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="live-indicator">
                     <span class="live-dot"></span>
                     Live
@@ -2494,6 +2506,78 @@
                 navigator.serviceWorker.register('/static/sw.js');
             });
         }
+
+        // Notification Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const notifBtn = document.getElementById('notificationBtn');
+            const notifDropdown = document.getElementById('notificationDropdown');
+            const unreadBadge = document.getElementById('unreadBadge');
+            const notifList = document.getElementById('notificationList');
+            
+            notifBtn.addEventListener('click', () => {
+                const isHidden = notifDropdown.style.display === 'none';
+                notifDropdown.style.display = isHidden ? 'block' : 'none';
+                
+                if (isHidden) {
+                    // Mark all as read by saving the latest ID to localStorage
+                    const latestId = notifList.dataset.latestId;
+                    if (latestId) {
+                        localStorage.setItem('lastReadNotificationId', latestId);
+                        unreadBadge.style.display = 'none';
+                    }
+                }
+            });
+
+            // Close dropdown if clicked outside
+            document.addEventListener('click', (e) => {
+                if (!notifBtn.contains(e.target) && !notifDropdown.contains(e.target)) {
+                    notifDropdown.style.display = 'none';
+                }
+            });
+
+            // Fetch and render notifications
+            async function fetchNotifications() {
+                try {
+                    const res = await fetch('/api/notifications');
+                    const data = await res.json();
+                    
+                    if (data.notifications && data.notifications.length > 0) {
+                        notifList.innerHTML = '';
+                        const latestId = data.notifications[0].id;
+                        notifList.dataset.latestId = latestId;
+                        
+                        const lastReadId = localStorage.getItem('lastReadNotificationId');
+                        if (lastReadId !== latestId) {
+                            unreadBadge.style.display = 'block';
+                        }
+                        
+                        data.notifications.forEach(notif => {
+                            let riskColor = notif.riskLevel === 'High' ? '#ef4444' : (notif.riskLevel === 'Medium' ? '#f59e0b' : '#10b981');
+                            const timeStr = new Date(notif.timestamp).toLocaleString();
+                            const item = document.createElement('div');
+                            item.style.padding = '0.75rem';
+                            item.style.background = 'rgba(255,255,255,0.05)';
+                            item.style.borderRadius = '8px';
+                            item.style.borderLeft = `3px solid ${riskColor}`;
+                            item.innerHTML = `
+                                <div style="font-weight: 600; color: white; font-size: 0.95rem; margin-bottom: 0.25rem;">${notif.title}</div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem; line-height: 1.4; margin-bottom: 0.5rem;">${notif.body}</div>
+                                <div style="color: rgba(255,255,255,0.4); font-size: 0.7rem;">${timeStr}</div>
+                            `;
+                            notifList.appendChild(item);
+                        });
+                    } else {
+                        notifList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No new notifications</div>';
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch notifications', err);
+                }
+            }
+
+            fetchNotifications();
+            // Poll every 30 seconds
+            setInterval(fetchNotifications, 30000);
+        });
     </script>
 </body>
 

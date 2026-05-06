@@ -366,10 +366,28 @@
                 Emergency Broadcast System</h3>
             <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Send statewide emergency alerts to all
                 registered health officials and public terminals.</p>
-            <button class="btn-danger">
+            <button class="btn-danger" id="openBroadcastModal">
                 <i class="fas fa-bullhorn"></i>
                 Initiate Broadcast
             </button>
+        </div>
+    </div>
+
+    <!-- Broadcast Modal -->
+    <div id="broadcastModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--bg-primary); border: 1px solid var(--accent-red); padding: 2rem; border-radius: var(--radius); width: 400px; max-width: 90%;">
+            <h3 style="color: var(--text-primary); margin-bottom: 1.5rem;">New Emergency Broadcast</h3>
+            <input type="text" id="bTitle" placeholder="Alert Title" style="width: 100%; padding: 0.8rem; margin-bottom: 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; border-radius: 6px;">
+            <textarea id="bBody" placeholder="Alert Description" rows="4" style="width: 100%; padding: 0.8rem; margin-bottom: 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; border-radius: 6px;"></textarea>
+            <select id="bRisk" style="width: 100%; padding: 0.8rem; margin-bottom: 1.5rem; background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; border-radius: 6px;">
+                <option value="High" style="color:red;">High Risk</option>
+                <option value="Medium" style="color:orange;">Medium Risk</option>
+                <option value="Low" style="color:green;">Low Risk</option>
+            </select>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="closeBroadcastModal" style="padding: 0.5rem 1rem; background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button id="submitBroadcast" class="btn-danger" style="padding: 0.5rem 1rem;"><i class="fas fa-paper-plane"></i> Send</button>
+            </div>
         </div>
     </div>
 
@@ -415,6 +433,57 @@
                 plugins: { legend: { position: 'bottom', labels: { color: '#aaa' } } }
             }
         });
+
+        // Modal Logic
+        const broadcastModal = document.getElementById('broadcastModal');
+        const openBroadcastModal = document.getElementById('openBroadcastModal');
+        const closeBroadcastModal = document.getElementById('closeBroadcastModal');
+        const submitBroadcast = document.getElementById('submitBroadcast');
+
+        openBroadcastModal.addEventListener('click', () => {
+            broadcastModal.style.display = 'flex';
+        });
+
+        closeBroadcastModal.addEventListener('click', () => {
+            broadcastModal.style.display = 'none';
+        });
+
+        submitBroadcast.addEventListener('click', async () => {
+            const title = document.getElementById('bTitle').value;
+            const body = document.getElementById('bBody').value;
+            const riskLevel = document.getElementById('bRisk').value;
+
+            if (!title || !body) {
+                alert("Please fill in both title and description.");
+                return;
+            }
+
+            submitBroadcast.innerHTML = "Sending...";
+            submitBroadcast.disabled = true;
+
+            try {
+                const res = await fetch('/api/send_broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, body, riskLevel })
+                });
+
+                if (res.ok) {
+                    alert('Broadcast sent successfully!');
+                    broadcastModal.style.display = 'none';
+                    document.getElementById('bTitle').value = '';
+                    document.getElementById('bBody').value = '';
+                } else {
+                    alert('Failed to send broadcast.');
+                }
+            } catch (err) {
+                alert('Error connecting to server.');
+            }
+
+            submitBroadcast.innerHTML = `<i class="fas fa-paper-plane"></i> Send`;
+            submitBroadcast.disabled = false;
+        });
+
     </script>
 </body>
 

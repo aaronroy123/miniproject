@@ -1,6 +1,8 @@
 import sys
 import os
 import json
+import uuid
+from datetime import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -285,6 +287,69 @@ def subscribe():
             json.dump(subs, f)
             
     return {"status": "success"}, 201
+
+@app.route("/api/notifications")
+def get_notifications():
+    try:
+        with open('data/notifications.json', 'r') as f:
+            notifs = json.load(f)
+    except:
+        notifs = []
+    return {"notifications": notifs}
+
+@app.route("/api/send_broadcast", methods=["POST"])
+def send_broadcast():
+    if session.get("user") != "admin":
+        return {"error": "Unauthorized"}, 401
+        
+    payload = request.get_json()
+    if not payload:
+        return {"error": "Invalid data"}, 400
+        
+    title = payload.get("title", "Emergency Broadcast")
+    body = payload.get("body", "")
+    risk_level = payload.get("riskLevel", "High")
+    
+    notif = {
+        "id": str(uuid.uuid4()),
+        "title": title,
+        "body": body,
+        "riskLevel": risk_level,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    import os
+    os.makedirs('data', exist_ok=True)
+    try:
+        with open('data/notifications.json', 'r') as f:
+            notifs = json.load(f)
+    except:
+        notifs = []
+        
+    notifs.insert(0, notif)
+    with open('data/notifications.json', 'w') as f:
+        json.dump(notifs, f)
+        
+    if webpush:
+        try:
+            with open('data/subscriptions.json', 'r') as f:
+                subs = json.load(f)
+        except:
+            subs = []
+            
+        push_payload = {"title": title, "body": body}
+        for sub in subs:
+            try:
+                webpush(
+                    subscription_info=sub,
+                    data=json.dumps(push_payload),
+                    vapid_private_key=VAPID_KEYS.get("private_key"),
+                    vapid_claims=VAPID_CLAIMS
+                )
+            except Exception as ex:
+                print("Push failed to endpoint:", repr(ex))
+                
+    return {"status": "success", "notification": notif}
 
 @app.route("/api/send_push", methods=["POST"])
 def send_push():
